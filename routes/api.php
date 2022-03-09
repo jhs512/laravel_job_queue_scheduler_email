@@ -16,6 +16,7 @@ use App\Http\Controllers\API\V1\AuthController;
 
 Route::prefix('V1')->group(function () {
     Route::middleware([])->prefix('auth')->group(function () {
+        Route::get('me', [AuthController::class, 'me']);
         Route::post('register', [AuthController::class, 'register']);
         Route::post('login', [AuthController::class, 'login']);
     });

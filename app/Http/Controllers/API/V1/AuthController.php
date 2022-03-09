@@ -4,13 +4,43 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Elasticsearch\ClientBuilder;
 use Illuminate\Validation\Rules;
 use App\Http\Controllers\Controller;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Auth\Events\Registered;
 
 class AuthController extends Controller
 {
+    public function me()
+    {
+        $client = ClientBuilder::create()
+            ->setBasicAuthentication('elastic', 'elasticpassword')
+            ->setHosts(['http://192.168.56.102:9200'])
+            ->build();
+
+        $params = [
+            'body' => [
+                'query' => '
+                SELECT id
+                FROM sample1_dev___products_product_type_2
+                ORDER BY score() DESC
+                '
+            ]
+        ];
+
+        $response = $client->sql()->query($params);
+
+        $ids = collect($response['rows'])->map(function ($row) {
+            return $row[0];
+        })->toArray();
+
+        $users = User::whereIn('id', $ids)
+            ->orderByRaw('FIELD(id, ' . implode(", ", $ids) . ')');
+        echo $users->toSql();
+        exit;
+    }
+
     public function register(Request $request)
     {
         $request->validate([
